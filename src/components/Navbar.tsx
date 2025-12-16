@@ -11,7 +11,6 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, onLogout }: NavbarProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
