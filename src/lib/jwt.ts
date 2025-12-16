@@ -17,10 +17,9 @@ export interface JWTPayload {
  */
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
   try {
-    const options: SignOptions = {
+    return jwt.sign(payload, JWT_SECRET, {
       expiresIn: JWT_EXPIRY,
-    };
-    return jwt.sign(payload, JWT_SECRET, options);
+    } as any);
   } catch (error) {
     logger.error('Token generation failed:', error);
     throw error;
