@@ -2,8 +2,11 @@
 
 [build]
   command = "npm run build"
-  functions = "netlify/functions"
   publish = ".next"
+
+# Install Netlify Next.js plugin for proper Next.js support
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # Environment Variables (set these in Netlify Dashboard)
 [env]
