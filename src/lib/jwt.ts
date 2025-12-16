@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import logger from './logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key';
@@ -17,7 +17,10 @@ export interface JWTPayload {
  */
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
   try {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    const options: SignOptions = {
+      expiresIn: JWT_EXPIRY,
+    };
+    return jwt.sign(payload, JWT_SECRET, options);
   } catch (error) {
     logger.error('Token generation failed:', error);
     throw error;
