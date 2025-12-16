@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useForm } from 'react-hook-form';
+import axios from 'axios';
 import { Navbar } from '@/components/Navbar';
 import { Form, FormInput, FormSelect, FormTextArea } from '@/components/Form';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import axios from 'axios';
-import Link from 'next/link';
 
 export default function InstructorDashboard() {
   const { user, logout } = useAuth();
@@ -62,7 +61,7 @@ export default function InstructorDashboard() {
         modules: [],
       };
 
-      const response = await axios.post('/api/courses', courseData);
+      await axios.post('/api/courses', courseData);
       reset();
       fetchCourses();
       alert('Course created successfully!');

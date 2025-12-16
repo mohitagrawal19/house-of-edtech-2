@@ -40,7 +40,7 @@ export async function connectDB() {
     };
 
     cached.promise = mongoose
-      .connect(MONGODB_URI, opts)
+      .connect(MONGODB_URI!, opts)
       .then((mongoose) => {
         logger.info('MongoDB connected successfully');
         return mongoose;

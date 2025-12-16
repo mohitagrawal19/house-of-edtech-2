@@ -6,7 +6,6 @@ import { Navbar } from '@/components/Navbar';
 import { Form, FormInput, FormSelect } from '@/components/Form';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
-import axios from 'axios';
 
 export default function Register() {
   const router = useRouter();

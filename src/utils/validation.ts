@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import logger from '@/lib/logger';
 
 // Initialize DOMPurify for Node.js
-const window = new JSDOM('').window as unknown as Window;
+const window = new JSDOM('').window as any;
 const sanitize = DOMPurify(window).sanitize;
 
 /**

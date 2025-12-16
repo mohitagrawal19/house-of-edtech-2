@@ -13,16 +13,18 @@ import { Types } from 'mongoose';
  * Get a specific course by ID
  * GET /api/courses/[id]
  */
-async function getCourse(req: NextApiRequest, res: NextApiResponse) {
+async function getCourse(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'GET') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
     const { id } = req.query;
 
     if (!id || !Types.ObjectId.isValid(id as string)) {
-      return errorResponse(res, 400, 'Invalid course ID');
+      errorResponse(res, 400, 'Invalid course ID');
+      return;
     }
 
     await connectDB();
@@ -32,13 +34,14 @@ async function getCourse(req: NextApiRequest, res: NextApiResponse) {
       .populate('students', 'name email avatar');
 
     if (!course) {
-      return errorResponse(res, 404, 'Course not found');
+      errorResponse(res, 404, 'Course not found');
+      return;
     }
 
-    return successResponse(res, course);
+    successResponse(res, course);
   } catch (error) {
     logger.error('Error fetching course:', error);
-    return errorResponse(res, 500, 'Failed to fetch course');
+    errorResponse(res, 500, 'Failed to fetch course');
   }
 }
 
@@ -49,23 +52,26 @@ async function getCourse(req: NextApiRequest, res: NextApiResponse) {
 async function updateCourse(
   req: AuthenticatedRequest,
   res: NextApiResponse
-) {
+): Promise<void> {
   if (req.method !== 'PUT') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
     const { id } = req.query;
 
     if (!id || !Types.ObjectId.isValid(id as string)) {
-      return errorResponse(res, 400, 'Invalid course ID');
+      errorResponse(res, 400, 'Invalid course ID');
+      return;
     }
 
     // Validate input
     const validation = await validateData(CourseSchemas.update, req.body);
 
     if (!validation.success) {
-      return errorResponse(res, 400, 'Validation failed', validation.errors);
+      errorResponse(res, 400, 'Validation failed', validation.errors);
+      return;
     }
 
     await connectDB();
@@ -73,7 +79,8 @@ async function updateCourse(
     const course = await Course.findById(id);
 
     if (!course) {
-      return errorResponse(res, 404, 'Course not found');
+      errorResponse(res, 404, 'Course not found');
+      return;
     }
 
     // Check authorization - only course creator or admin can update
@@ -84,7 +91,8 @@ async function updateCourse(
       logger.warn(
         `Unauthorized update attempt for course ${id} by user ${req.user?.userId}`
       );
-      return errorResponse(res, 403, 'Not authorized to update this course');
+      errorResponse(res, 403, 'Not authorized to update this course');
+      return;
     }
 
     // Update course
@@ -97,10 +105,10 @@ async function updateCourse(
       `Course updated: ${id} by user: ${req.user?.userId}`
     );
 
-    return successResponse(res, updatedCourse, 'Course updated successfully');
+    successResponse(res, updatedCourse, 'Course updated successfully');
   } catch (error) {
     logger.error('Error updating course:', error);
-    return errorResponse(res, 500, 'Failed to update course');
+    errorResponse(res, 500, 'Failed to update course');
   }
 }
 
@@ -111,16 +119,18 @@ async function updateCourse(
 async function deleteCourse(
   req: AuthenticatedRequest,
   res: NextApiResponse
-) {
+): Promise<void> {
   if (req.method !== 'DELETE') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
     const { id } = req.query;
 
     if (!id || !Types.ObjectId.isValid(id as string)) {
-      return errorResponse(res, 400, 'Invalid course ID');
+      errorResponse(res, 400, 'Invalid course ID');
+      return;
     }
 
     await connectDB();
@@ -128,7 +138,8 @@ async function deleteCourse(
     const course = await Course.findById(id);
 
     if (!course) {
-      return errorResponse(res, 404, 'Course not found');
+      errorResponse(res, 404, 'Course not found');
+      return;
     }
 
     // Check authorization
@@ -139,7 +150,8 @@ async function deleteCourse(
       logger.warn(
         `Unauthorized delete attempt for course ${id} by user ${req.user?.userId}`
       );
-      return errorResponse(res, 403, 'Not authorized to delete this course');
+      errorResponse(res, 403, 'Not authorized to delete this course');
+      return;
     }
 
     // Soft delete by marking isActive as false
@@ -162,10 +174,10 @@ async function deleteCourse(
       `Course deleted: ${id} by user: ${req.user?.userId}`
     );
 
-    return successResponse(res, null, 'Course deleted successfully');
+    successResponse(res, null, 'Course deleted successfully');
   } catch (error) {
     logger.error('Error deleting course:', error);
-    return errorResponse(res, 500, 'Failed to delete course');
+    errorResponse(res, 500, 'Failed to delete course');
   }
 }
 
@@ -176,16 +188,18 @@ async function deleteCourse(
 async function enrollCourse(
   req: AuthenticatedRequest,
   res: NextApiResponse
-) {
+): Promise<void> {
   if (req.method !== 'POST') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
     const { id } = req.query;
 
     if (!id || !Types.ObjectId.isValid(id as string)) {
-      return errorResponse(res, 400, 'Invalid course ID');
+      errorResponse(res, 400, 'Invalid course ID');
+      return;
     }
 
     await connectDB();
@@ -193,18 +207,21 @@ async function enrollCourse(
     const course = await Course.findById(id);
 
     if (!course) {
-      return errorResponse(res, 404, 'Course not found');
+      errorResponse(res, 404, 'Course not found');
+      return;
     }
 
     if (!course.isActive) {
-      return errorResponse(res, 400, 'Course is not available');
+      errorResponse(res, 400, 'Course is not available');
+      return;
     }
 
     const userId = new Types.ObjectId(req.user?.userId);
 
     // Check if already enrolled
     if (course.students.includes(userId)) {
-      return errorResponse(res, 400, 'Already enrolled in this course');
+      errorResponse(res, 400, 'Already enrolled in this course');
+      return;
     }
 
     // Add student to course
@@ -222,17 +239,17 @@ async function enrollCourse(
       `User ${req.user?.userId} enrolled in course: ${id}`
     );
 
-    return successResponse(res, null, 'Successfully enrolled in course', 201);
+    successResponse(res, null, 'Successfully enrolled in course', 201);
   } catch (error) {
     logger.error('Error enrolling in course:', error);
-    return errorResponse(res, 500, 'Failed to enroll in course');
+    errorResponse(res, 500, 'Failed to enroll in course');
   }
 }
 
 /**
  * Main handler
  */
-export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) => {
+export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   // Apply rate limiting
   await new Promise<void>((resolve, reject) => {
     generalLimiter(req as any, res as any, (error?: any) => {
@@ -244,14 +261,14 @@ export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) =>
   const { action } = req.query;
 
   if (req.method === 'GET') {
-    return getCourse(req, res);
+    await getCourse(req, res);
   } else if (req.method === 'PUT') {
-    return withAuth(updateCourse)(req as AuthenticatedRequest, res);
+    await withAuth(updateCourse)(req as AuthenticatedRequest, res);
   } else if (req.method === 'DELETE') {
-    return withAuth(deleteCourse)(req as AuthenticatedRequest, res);
+    await withAuth(deleteCourse)(req as AuthenticatedRequest, res);
   } else if (req.method === 'POST' && action === 'enroll') {
-    return withAuth(enrollCourse)(req as AuthenticatedRequest, res);
+    await withAuth(enrollCourse)(req as AuthenticatedRequest, res);
+  } else {
+    errorResponse(res, 405, 'Method not allowed');
   }
-
-  return errorResponse(res, 405, 'Method not allowed');
 });

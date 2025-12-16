@@ -11,9 +11,10 @@ import logger from '@/lib/logger';
  * User Registration
  * POST /api/auth/register
  */
-async function handleRegister(req: NextApiRequest, res: NextApiResponse) {
+async function handleRegister(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
@@ -21,7 +22,8 @@ async function handleRegister(req: NextApiRequest, res: NextApiResponse) {
     const validation = await validateData(AuthSchemas.register, req.body);
 
     if (!validation.success) {
-      return errorResponse(res, 400, 'Validation failed', validation.errors);
+      errorResponse(res, 400, 'Validation failed', validation.errors);
+      return;
     }
 
     const { name, email, password, role } = validation.data!;
@@ -32,7 +34,8 @@ async function handleRegister(req: NextApiRequest, res: NextApiResponse) {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return errorResponse(res, 409, 'User already exists with this email');
+      errorResponse(res, 409, 'User already exists with this email');
+      return;
     }
 
     // Create new user
@@ -55,7 +58,7 @@ async function handleRegister(req: NextApiRequest, res: NextApiResponse) {
 
     logger.info(`New user registered: ${email} with role: ${role}`);
 
-    return successResponse(
+    successResponse(
       res,
       {
         user: {
@@ -71,7 +74,7 @@ async function handleRegister(req: NextApiRequest, res: NextApiResponse) {
     );
   } catch (error) {
     logger.error('Registration error:', error);
-    return errorResponse(res, 500, 'Registration failed');
+    errorResponse(res, 500, 'Registration failed');
   }
 }
 
@@ -79,9 +82,10 @@ async function handleRegister(req: NextApiRequest, res: NextApiResponse) {
  * User Login
  * POST /api/auth/login
  */
-async function handleLogin(req: NextApiRequest, res: NextApiResponse) {
+async function handleLogin(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
@@ -89,7 +93,8 @@ async function handleLogin(req: NextApiRequest, res: NextApiResponse) {
     const validation = await validateData(AuthSchemas.login, req.body);
 
     if (!validation.success) {
-      return errorResponse(res, 400, 'Validation failed', validation.errors);
+      errorResponse(res, 400, 'Validation failed', validation.errors);
+      return;
     }
 
     const { email, password } = validation.data!;
@@ -102,12 +107,14 @@ async function handleLogin(req: NextApiRequest, res: NextApiResponse) {
 
     if (!user || !(await user.comparePassword(password))) {
       logger.warn(`Failed login attempt for email: ${email}`);
-      return errorResponse(res, 401, 'Invalid email or password');
+      errorResponse(res, 401, 'Invalid email or password');
+      return;
     }
 
     if (!user.isActive) {
       logger.warn(`Login attempt for inactive user: ${email}`);
-      return errorResponse(res, 403, 'Account is inactive');
+      errorResponse(res, 403, 'Account is inactive');
+      return;
     }
 
     // Update last login
@@ -123,7 +130,7 @@ async function handleLogin(req: NextApiRequest, res: NextApiResponse) {
 
     logger.info(`User logged in: ${email}`);
 
-    return successResponse(
+    successResponse(
       res,
       {
         user: {
@@ -138,14 +145,14 @@ async function handleLogin(req: NextApiRequest, res: NextApiResponse) {
     );
   } catch (error) {
     logger.error('Login error:', error);
-    return errorResponse(res, 500, 'Login failed');
+    errorResponse(res, 500, 'Login failed');
   }
 }
 
 /**
  * Main handler with rate limiting
  */
-export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) => {
+export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   // Apply rate limiting
   await new Promise<void>((resolve, reject) => {
     authLimiter(req as any, res as any, (error?: any) => {
@@ -158,13 +165,13 @@ export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) =>
     const action = req.query.action as string;
 
     if (action === 'register') {
-      return handleRegister(req, res);
+      await handleRegister(req, res);
     } else if (action === 'login') {
-      return handleLogin(req, res);
+      await handleLogin(req, res);
     } else {
-      return errorResponse(res, 400, 'Invalid action');
+      errorResponse(res, 400, 'Invalid action');
     }
+  } else {
+    errorResponse(res, 405, 'Method not allowed');
   }
-
-  return errorResponse(res, 405, 'Method not allowed');
 });
