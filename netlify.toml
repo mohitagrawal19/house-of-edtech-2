@@ -1,0 +1,51 @@
+# Netlify Configuration for House of EdTech
+
+[build]
+  command = "npm run build"
+  functions = "netlify/functions"
+  publish = ".next"
+
+# Environment Variables (set these in Netlify Dashboard)
+[env]
+  [env.production]
+    NEXT_PUBLIC_API_URL = "https://house-of-edtech.netlify.app"
+    NEXT_PUBLIC_APP_URL = "https://house-of-edtech.netlify.app"
+
+# Headers for security
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+
+# Redirects for Next.js
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Cache control
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Next.js public files caching
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
