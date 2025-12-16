@@ -4,11 +4,11 @@
   "description": "Full-stack CRUD application for educational technology platform",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
+  "lint": "next lint",
+  "build": "next build",
+  "dev": "next dev",
+  "start": "next start"
+},
   "dependencies": {
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",

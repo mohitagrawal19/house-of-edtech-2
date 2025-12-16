@@ -167,13 +167,11 @@ export function CourseCard({
 }
 interface CourseGridProps {
   courses: CourseCardProps[];
-  isLoading?: boolean;
   onEnroll?: (courseId: string) => Promise<void>;
 }
 
 export function CourseGrid({
   courses,
-  isLoading = false,
   onEnroll,
 }: CourseGridProps) {
   return (
