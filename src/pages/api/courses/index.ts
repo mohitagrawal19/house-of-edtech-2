@@ -12,9 +12,10 @@ import logger from '@/lib/logger';
  * Get all courses with filtering and pagination
  * GET /api/courses?page=1&limit=10&category=programming&search=react
  */
-async function getCourses(req: NextApiRequest, res: NextApiResponse) {
+async function getCourses(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'GET') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
@@ -50,7 +51,7 @@ async function getCourses(req: NextApiRequest, res: NextApiResponse) {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    return successResponse(res, {
+    successResponse(res, {
       courses,
       pagination: {
         page,
@@ -61,7 +62,7 @@ async function getCourses(req: NextApiRequest, res: NextApiResponse) {
     });
   } catch (error) {
     logger.error('Error fetching courses:', error);
-    return errorResponse(res, 500, 'Failed to fetch courses');
+    errorResponse(res, 500, 'Failed to fetch courses');
   }
 }
 
@@ -69,22 +70,25 @@ async function getCourses(req: NextApiRequest, res: NextApiResponse) {
  * Create a new course
  * POST /api/courses
  */
-async function createCourse(req: AuthenticatedRequest, res: NextApiResponse) {
+async function createCourse(req: AuthenticatedRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
     // Only instructors and admins can create courses
     if (!['instructor', 'admin'].includes(req.user?.role || '')) {
-      return errorResponse(res, 403, 'Only instructors can create courses');
+      errorResponse(res, 403, 'Only instructors can create courses');
+      return;
     }
 
     // Validate input
     const validation = await validateData(CourseSchemas.create, req.body);
 
     if (!validation.success) {
-      return errorResponse(res, 400, 'Validation failed', validation.errors);
+      errorResponse(res, 400, 'Validation failed', validation.errors);
+      return;
     }
 
     await connectDB();
@@ -108,17 +112,17 @@ async function createCourse(req: AuthenticatedRequest, res: NextApiResponse) {
       `Course created: ${course._id} by instructor: ${req.user?.userId}`
     );
 
-    return successResponse(res, course, 'Course created successfully', 201);
+    successResponse(res, course, 'Course created successfully', 201);
   } catch (error) {
     logger.error('Error creating course:', error);
-    return errorResponse(res, 500, 'Failed to create course');
+    errorResponse(res, 500, 'Failed to create course');
   }
 }
 
 /**
  * Main handler
  */
-export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) => {
+export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   // Apply rate limiting
   await new Promise<void>((resolve, reject) => {
     generalLimiter(req as any, res as any, (error?: any) => {
@@ -128,10 +132,10 @@ export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) =>
   });
 
   if (req.method === 'GET') {
-    return getCourses(req, res);
+    await getCourses(req, res);
   } else if (req.method === 'POST') {
-    return withAuth(createCourse)(req as AuthenticatedRequest, res);
+    await withAuth(createCourse)(req as AuthenticatedRequest, res);
+  } else {
+    errorResponse(res, 405, 'Method not allowed');
   }
-
-  return errorResponse(res, 405, 'Method not allowed');
 });

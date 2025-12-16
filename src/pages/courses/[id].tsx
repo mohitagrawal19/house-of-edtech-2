@@ -180,7 +180,7 @@ export default function CourseDetailPage() {
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span>✅</span> What You'll Learn
                 </h3>
-                <ul style={{ list: 'none', padding: 0 }}>
+                <ul style={{ listStyle: 'none', padding: 0 }}>
                   {[
                     'Master the fundamentals and core concepts',
                     'Build real-world projects and applications',

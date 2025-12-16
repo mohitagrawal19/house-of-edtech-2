@@ -111,8 +111,8 @@ UserSchema.methods.comparePassword = async function (
 
 // Remove password from queries by default
 UserSchema.set('toJSON', {
-  transform: function (doc, ret) {
-    delete ret.password;
+  transform: function (_doc, ret) {
+    delete (ret as any).password;
     return ret;
   },
 });

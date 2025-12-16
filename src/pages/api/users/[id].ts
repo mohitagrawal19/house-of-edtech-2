@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import User from '@/lib/models/User';
-import Course from '@/lib/models/Course';
 import { connectDB } from '@/lib/mongodb';
 import { successResponse, errorResponse, asyncHandler } from '@/utils/response';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth';
@@ -15,9 +14,10 @@ import { Types } from 'mongoose';
 async function getCurrentUser(
   req: AuthenticatedRequest,
   res: NextApiResponse
-) {
+): Promise<void> {
   if (req.method !== 'GET') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
@@ -28,13 +28,14 @@ async function getCurrentUser(
       .populate('createdCourses', 'title category price');
 
     if (!user) {
-      return errorResponse(res, 404, 'User not found');
+      errorResponse(res, 404, 'User not found');
+      return;
     }
 
-    return successResponse(res, user);
+    successResponse(res, user);
   } catch (error) {
     logger.error('Error fetching user profile:', error);
-    return errorResponse(res, 500, 'Failed to fetch user profile');
+    errorResponse(res, 500, 'Failed to fetch user profile');
   }
 }
 
@@ -45,9 +46,10 @@ async function getCurrentUser(
 async function updateProfile(
   req: AuthenticatedRequest,
   res: NextApiResponse
-) {
+): Promise<void> {
   if (req.method !== 'PUT') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
@@ -55,11 +57,13 @@ async function updateProfile(
 
     // Validate input
     if (name && (typeof name !== 'string' || name.length < 2 || name.length > 100)) {
-      return errorResponse(res, 400, 'Invalid name');
+      errorResponse(res, 400, 'Invalid name');
+      return;
     }
 
     if (bio && (typeof bio !== 'string' || bio.length > 500)) {
-      return errorResponse(res, 400, 'Invalid bio');
+      errorResponse(res, 400, 'Invalid bio');
+      return;
     }
 
     await connectDB();
@@ -77,10 +81,10 @@ async function updateProfile(
 
     logger.info(`User profile updated: ${req.user?.userId}`);
 
-    return successResponse(res, user, 'Profile updated successfully');
+    successResponse(res, user, 'Profile updated successfully');
   } catch (error) {
     logger.error('Error updating profile:', error);
-    return errorResponse(res, 500, 'Failed to update profile');
+    errorResponse(res, 500, 'Failed to update profile');
   }
 }
 
@@ -88,16 +92,18 @@ async function updateProfile(
  * Get user by ID
  * GET /api/users/[id]
  */
-async function getUserById(req: NextApiRequest, res: NextApiResponse) {
+async function getUserById(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'GET') {
-    return errorResponse(res, 405, 'Method not allowed');
+    errorResponse(res, 405, 'Method not allowed');
+    return;
   }
 
   try {
     const { id } = req.query;
 
     if (!id || !Types.ObjectId.isValid(id as string)) {
-      return errorResponse(res, 400, 'Invalid user ID');
+      errorResponse(res, 400, 'Invalid user ID');
+      return;
     }
 
     await connectDB();
@@ -107,20 +113,21 @@ async function getUserById(req: NextApiRequest, res: NextApiResponse) {
       .populate('createdCourses', 'title category rating');
 
     if (!user) {
-      return errorResponse(res, 404, 'User not found');
+      errorResponse(res, 404, 'User not found');
+      return;
     }
 
-    return successResponse(res, user);
+    successResponse(res, user);
   } catch (error) {
     logger.error('Error fetching user:', error);
-    return errorResponse(res, 500, 'Failed to fetch user');
+    errorResponse(res, 500, 'Failed to fetch user');
   }
 }
 
 /**
  * Main handler
  */
-export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) => {
+export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   // Apply rate limiting
   await new Promise<void>((resolve, reject) => {
     generalLimiter(req as any, res as any, (error?: any) => {
@@ -135,18 +142,20 @@ export default asyncHandler(async (req: NextApiRequest, res: NextApiResponse) =>
   if (id === 'me') {
     // Current user endpoints
     if (req.method === 'GET' || req.method === 'PUT') {
-      return withAuth(async (req: AuthenticatedRequest, res: NextApiResponse) => {
+      await withAuth(async (req: AuthenticatedRequest, res: NextApiResponse): Promise<void> => {
         if (req.method === 'GET') {
-          return getCurrentUser(req, res);
+          await getCurrentUser(req, res);
         } else if (req.method === 'PUT') {
-          return updateProfile(req, res);
+          await updateProfile(req, res);
         }
       })(req as AuthenticatedRequest, res);
+    } else {
+      errorResponse(res, 405, 'Method not allowed');
     }
   } else if (id) {
     // Specific user profile
-    return getUserById(req, res);
+    await getUserById(req, res);
+  } else {
+    errorResponse(res, 405, 'Method not allowed');
   }
-
-  return errorResponse(res, 405, 'Method not allowed');
 });

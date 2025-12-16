@@ -1,4 +1,4 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import logger from './logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key';

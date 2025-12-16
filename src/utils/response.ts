@@ -17,7 +17,7 @@ export function successResponse<T>(
   data?: T,
   message: string = 'Success',
   statusCode: number = 200
-): NextApiResponse {
+): void {
   const response: APIResponse<T> = {
     success: true,
     message,
@@ -25,7 +25,7 @@ export function successResponse<T>(
     timestamp: new Date().toISOString(),
   };
 
-  return res.status(statusCode).json(response);
+  res.status(statusCode).json(response);
 }
 
 /**
@@ -36,7 +36,7 @@ export function errorResponse(
   statusCode: number = 400,
   message: string = 'An error occurred',
   errors?: Record<string, string>
-): NextApiResponse {
+): void {
   const response: APIResponse = {
     success: false,
     message,
@@ -45,7 +45,7 @@ export function errorResponse(
   };
 
   logger.error(`API Error [${statusCode}]: ${message}`, errors);
-  return res.status(statusCode).json(response);
+  res.status(statusCode).json(response);
 }
 
 /**
@@ -64,24 +64,28 @@ export function handleError(
 
     // Check for validation errors
     if (error.message.includes('Validation')) {
-      return errorResponse(res, 400, error.message);
+      errorResponse(res, 400, error.message);
+      return;
     }
 
     // Check for authorization errors
     if (error.message.includes('Unauthorized')) {
-      return errorResponse(res, 401, error.message);
+      errorResponse(res, 401, error.message);
+      return;
     }
 
     // Check for not found errors
     if (error.message.includes('not found')) {
-      return errorResponse(res, 404, error.message);
+      errorResponse(res, 404, error.message);
+      return;
     }
 
-    return errorResponse(res, 500, defaultMessage);
+    errorResponse(res, 500, defaultMessage);
+    return;
   }
 
   logger.error('Unknown error:', error);
-  return errorResponse(res, 500, defaultMessage);
+  errorResponse(res, 500, defaultMessage);
 }
 
 /**
